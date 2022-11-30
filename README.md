@@ -18,7 +18,8 @@ the following table is detail  compatible feature:
 | tcpmux  | Yes |	 Yes  |
 | http  | Yes |	 Yes  |
 | https  | Yes |  Yes  |
-| subdomain | No | Yes |
+| custom_domains | Yes | Yes |
+| subdomain | Yes | Yes |
 | use_encryption | No | Yes |
 | use_compression | No | Yes |
 | udp  | No |  Yes  |
@@ -93,7 +94,7 @@ sudo apt-get install -y libjson-c-dev
 sudo apt-get install -y libevent-dev
 ```
 
-Fork xfrpc on GitHub
+**Fork** xfrpc on GitHub
 
 ```shell
 git clone https://github.com/${YOUR_GITHUB_ACCOUNT_NAME}/xfrpc.git
