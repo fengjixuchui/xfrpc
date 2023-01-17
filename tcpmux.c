@@ -53,11 +53,20 @@ add_stream(struct tmux_stream *stream)
 void
 del_stream(uint32_t id) 
 {
-	assert(all_stream != NULL);
+	if (!all_stream) return;
 
 	struct tmux_stream *stream = get_stream_by_id(id);
 	if (stream)
 		HASH_DEL(all_stream, stream);
+}
+
+void
+clear_stream()
+{
+	if (!all_stream) return;
+
+	HASH_CLEAR(hh, all_stream);
+	all_stream = NULL;
 }
 
 struct tmux_stream *
@@ -351,10 +360,14 @@ process_data(struct tmux_stream *stream, uint32_t length, uint16_t flags,
 static int
 incr_send_window(struct bufferevent *bev, struct tcp_mux_header *tmux_hdr, uint16_t flags, struct tmux_stream *stream)
 {
+    if(!stream){
+        return 0;
+    }
+
 	if (!process_flags(flags, stream))
 		return 0;
-	
 	uint32_t length = ntohl(tmux_hdr->length);
+
 	if (stream->send_window == 0) bufferevent_enable(bev, EV_READ);
 	stream->send_window += length;
 	//debug(LOG_DEBUG, "incr_send_window : stream_id %d length %d send_window %d", 
@@ -413,11 +426,7 @@ tmux_stream_read(struct bufferevent *bev, struct tmux_stream *stream, uint32_t l
 {
 	assert(stream != NULL);
 	if (stream->state != ESTABLISHED) {
-		debug(LOG_WARNING, "stream %d state is %d : not ESTABLISHED, discard its data", stream->id, stream->state);
-		uint8_t *data = (uint8_t *)malloc(len);
-		bufferevent_read(bev, data, len);
-		free(data);
-		return len;
+		debug(LOG_WARNING, "stream %d state is %d : not ESTABLISHED, discard its data len %d", stream->id, stream->state, len);
 	}
 
 	return rx_ring_buffer_read(bev, &stream->rx_ring, len);
@@ -438,9 +447,13 @@ handle_tcp_mux_stream(struct tcp_mux_header *tmux_hdr, handle_data_fn_t fn)
 	}
 
 	struct tmux_stream *stream = get_stream_by_id(stream_id);
-	assert(stream != NULL);
+
+    if(!stream){
+        return 0;
+    }
+
 	struct proxy_client *pc = get_proxy_client(stream_id);
-	assert(stream != NULL);	
+
 	if (tmux_hdr->type == WINDOW_UPDATE) {
 		struct bufferevent *bev = pc?pc->local_proxy_bev: get_main_control()->connect_bev;
 		if (!incr_send_window(bev, tmux_hdr, flags, stream)) {
@@ -450,10 +463,13 @@ handle_tcp_mux_stream(struct tcp_mux_header *tmux_hdr, handle_data_fn_t fn)
 		return 0;
 	}
 	
-	
+	struct bufferevent *bout = get_main_control()->connect_bev;
+	if (stream->state != ESTABLISHED) {
+		return 0;
+	}
+
 	int32_t length = ntohl(tmux_hdr->length);
 	if (!process_data(stream, length, flags, fn, (void *)pc)) {
-		struct bufferevent *bout = get_main_control()->connect_bev;
 		tcp_mux_send_go_away(bout, PROTO_ERR);
 		return 0;
 	}
@@ -586,7 +602,7 @@ tmux_stream_write(struct bufferevent *bev, uint8_t *data, uint32_t length, struc
 	return max;
 }
 
-void
+int
 tmux_stream_close(struct bufferevent *bout, struct tmux_stream *stream)
 {
 	uint8_t flag = 0;
@@ -600,19 +616,21 @@ tmux_stream_close(struct bufferevent *bout, struct tmux_stream *stream)
 	case REMOTE_CLOSE:
 		flag = 1;
 		stream->state = CLOSED;
+		break;
 	case CLOSED:
 	case RESET:
 	default:
-		return;
+		return 0;
 	}
 	
 	uint16_t flags = get_send_flags(stream);
 	flags |= FIN;
 	tcp_mux_send_win_update(bout, flags, stream->id, 0);	
-	if (!flag) return;
+	if (!flag) return 1;
 
 	debug(LOG_DEBUG, "del proxy client %d", stream->id);
 	del_proxy_client_by_stream_id(stream->id);
+	return 0;
 }
 
 

@@ -3,8 +3,7 @@
 
 ## What is xfrpc 
 
-`xfrpc` is [frp](https://github.com/fatedier/frp) client implemented by c language for [OpenWRT](https://github.com/openwrt/openwrt)
-The motivation to start xfrpc project is that we are OpenWRTer, and openwrt usually run in devices which have limit ROM and RAM space, however frpc always need more space and memory; therefore we launched xfrpc project.
+The xfrpc project is an implementation of frp client written in C language for OpenWRT and IOT system. The main motivation of this project is to provide a lightweight solution for devices with limited resources such as OpenWRT devices which often have limited ROM and RAM space. The project aims to provide a frp client that uses less space and memory than other available options.
 
 ## Development Status
 
@@ -102,6 +101,33 @@ cd xfrp
 mkdir build
 cmake ..
 make
+```
+
+# Build xfrpc by Built-in thirdparty
+
+use Built-in thirdparty build xfrpc.Now support x86_64 architecture.
+
+require cmake version > 3.1.
+
+```shell
+git clone https://github.com/${YOUR_GITHUB_ACCOUNT_NAME}/xfrpc.git
+cd xfrp
+mkdir build
+cmake -D THIRDPARTY_STATIC_BUILD=ON ..
+make
+```
+
+Now,THIRDPARTY_STATIC_BUILD parameter is ON or OFF.THIRDPARTY_STATIC_BUILD parameter will be x86, arm, mips for support multiple architecture.
+
+# Build static binary in Alpine container
+
+Under project root directory
+
+```shell
+$ DOCKER_BUILDKIT=1 docker build --output out . -f docker/Dockerfile
+
+$ ls out/
+xfrpc
 ```
 
 ## Compile on OpenWrt
