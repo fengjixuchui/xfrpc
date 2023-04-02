@@ -1,4 +1,5 @@
-![xfrpc](https://github.com/liudf0716/xfrpc/blob/master/logo.png)
+
+![xfrpc](https://user-images.githubusercontent.com/1182593/213063003-73501d3b-1a22-4f4a-8f3f-4ca3268b5bee.png)
 
 
 ## What is xfrpc 
@@ -87,6 +88,7 @@ sequenceDiagram
 To run xfrpc on Ubuntu 20.04 LTS, you will need to have the following libraries installed: libevent, openssl-dev, and json-c. Use the following command in your terminal to install these libraries:
 
 ```
+sudo apt-get update
 sudo apt-get install -y libjson-c-dev libevent-dev libssl-dev
 ```
 
@@ -132,6 +134,30 @@ The THIRDPARTY_STATIC_BUILD parameter is default set to OFF, which means that by
 
 It's important to note that you will need cmake version greater than 3.1 to use this feature.
 
+### Cross-compile xfrpc by Built-in thirdparty
+
+The method of compiling arm architecture or mips architecture xfrpc under x86 architecture is as follows.
+
+Test on Ubuntu 22.04 LTS
+
+Cross-compile mips architecture xfrpc(only support linux mips, irix mips don't supported)
+If can't run in special mips architecture, Modify the CMakeLists.txt in the thirdparty folder and change the linux-mips32 string to linux-generic32.After modify can work.
+```
+sudo apt-get install gcc-mips-linux-gnu # install mips-gcc compiler
+mkdir build && cd build
+cmake -DTHIRDPARTY_STATIC_BUILD=mips -DCMAKE_C_COMPILER=mips-linux-gnu-gcc ..
+make
+```
+
+CMAKE_C_COMPILER flag is the path of your cross compiler.I recommend that you put this in an environment variable.
+
+Cross-compile arm architecture xfrpc
+```
+sudo apt-get install arm-linux-gnueabihf-gcc
+mkdir build && cd build
+cmake -DTHIRDPARTY_STATIC_BUILD=arm -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc ..
+make
+```
 
 ### Build static binary in Alpine container
 

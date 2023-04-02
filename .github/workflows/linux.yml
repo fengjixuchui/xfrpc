@@ -12,20 +12,14 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
-    
-    - name: install other depend lib
-      run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libjson-c-dev
-          sudo apt-get install -y libevent-dev
           
     - name: compile xfrpc
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake -D THIRDPARTY_STATIC_BUILD=ON ..
         make
